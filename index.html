@@ -3922,7 +3922,13 @@
                             <div class="spec-row"><span>Dimensions intérieures:</span><span id="contDims">5.90 × 2.35 × 2.39 m</span></div>
                             <div class="spec-row"><span>Volume utile:</span><span id="contVolume">33.1 m³</span></div>
                             <div class="spec-row"><span>Charge max:</span><span id="contMaxWeight">21,700 kg</span></div>
-                            <div class="spec-row" style="color: #fbbf24;"><span>Marge de sécurité en hauteur:</span><span>10 cm</span></div>
+                            <div class="spec-row" style="color: #fbbf24;">
+                                <span>Marge de sécurité en hauteur:</span>
+                                <span style="display: flex; align-items: center; gap: 4px;">
+                                    <input type="number" id="contHeightSafetyMargin" value="10" min="0" max="50" style="width: 50px; padding: 2px 4px; border-radius: 4px; border: 1px solid #fbbf24; background: rgba(251,191,36,0.1); color: #fbbf24; text-align: center; font-size: 0.85rem;">
+                                    <span>cm</span>
+                                </span>
+                            </div>
                         </div>
                     </div>
                     
@@ -7605,17 +7611,20 @@
             const floorY = 0.08;
             
             // Hauteur initiale des fourches calculée dynamiquement
-            // pour que la palette ne dépasse JAMAIS de la hauteur utile du conteneur
-            // Hauteur utile = hauteur conteneur - marge 10cm
-            const usableContainerHeight = contH - 0.10; // hauteur max autorisée en m
+            // pour que la palette ne dépasse JAMAIS de la hauteur INTÉRIEURE du conteneur
+            // On utilise contH (hauteur réelle) et non la hauteur utile (avec marge)
+            // car visuellement la palette ne doit jamais sortir du conteneur
+            const maxContainerHeight = contH; // hauteur intérieure réelle en m
             const minForkHeight = floorY + 0.01; // minimum au-dessus du sol
-            // Hauteur max des fourches pour que palette + fourches <= hauteur utile
-            const maxForkHeightForEntry = usableContainerHeight - target.palH;
+            // Hauteur max absolue des fourches pour que palette reste dans le conteneur
+            const maxForkHeightAbsolute = maxContainerHeight - target.palH;
             // Prendre la valeur la plus basse possible mais au-dessus du sol
-            const initialForkHeight = Math.max(minForkHeight, Math.min(minForkHeight + 0.02, maxForkHeightForEntry));
+            const initialForkHeight = Math.max(minForkHeight, Math.min(minForkHeight + 0.02, maxForkHeightAbsolute));
             
             // Hauteur à atteindre pour le gerbage (au-dessus des palettes existantes)
-            const liftHeightForStacking = target.level * target.palH + 0.15; // Légèrement au-dessus
+            // mais TOUJOURS limitée pour ne pas dépasser le conteneur
+            const idealLiftHeight = target.level * target.palH + 0.10; // 10cm au-dessus des palettes existantes
+            const liftHeightForStacking = Math.min(idealLiftHeight, maxForkHeightAbsolute);
             
             currentCarriedPalette.position.set(
                 forkliftStartX - forkOffset, 
@@ -8052,8 +8061,8 @@
             // VÉRIFICATION STRICTE DE LA HAUTEUR
             // ============================================
             
-            // Marge de sécurité pour le positionnement 3D (8cm d'offset du sol + 2cm de marge)
-            const heightSafetyMargin = 10; // cm
+            // Marge de sécurité configurable
+            const heightSafetyMargin = parseInt(document.getElementById('contHeightSafetyMargin').value) || 0;
             const effectiveContainerHeight = spec.height - heightSafetyMargin;
             
             // Vérification 1: Une seule palette doit rentrer dans le conteneur
@@ -8988,8 +8997,8 @@
             const contW = spec.width;
             const contH = spec.height;
             
-            // Marge de sécurité de 10cm (affichée dans les specs conteneur)
-            const heightSafetyMargin = 10;
+            // Marge de sécurité configurable
+            const heightSafetyMargin = parseInt(document.getElementById('contHeightSafetyMargin').value) || 0;
             const usableHeight = contH - heightSafetyMargin;
             
             // ============================================
@@ -9230,6 +9239,7 @@
         // =====================================================
         function displayPedagogicError(mode, data) {
             const container = document.getElementById('containerResultsContent');
+            const safetyMargin = parseInt(document.getElementById('contHeightSafetyMargin').value) || 0;
             let html = '';
             
             html += `
@@ -9255,7 +9265,7 @@
                             </div>
                             <div class="data-group">
                                 <div class="data-label">Marge de sécurité :</div>
-                                <div class="data-value" style="color: #fbbf24;">10 cm</div>
+                                <div class="data-value" style="color: #fbbf24;">${safetyMargin} cm</div>
                             </div>
                             
                             <h5 style="margin-top: 12px;">📦 Éléments à charger :</h5>
@@ -9289,7 +9299,7 @@
                             </div>
                             <div class="data-group">
                                 <div class="data-label">Marge de sécurité :</div>
-                                <div class="data-value" style="color: #fbbf24;">10 cm</div>
+                                <div class="data-value" style="color: #fbbf24;">${safetyMargin} cm</div>
                             </div>
                             
                             <h5 style="margin-top: 12px;">📦 Éléments chargés :</h5>
@@ -9328,7 +9338,7 @@
                             </div>
                             <div class="data-group">
                                 <div class="data-label">Marge de sécurité :</div>
-                                <div class="data-value" style="color: #fbbf24;">10 cm</div>
+                                <div class="data-value" style="color: #fbbf24;">${safetyMargin} cm</div>
                             </div>
                             
                             <h5 style="margin-top: 12px;">📦 Éléments à charger :</h5>
@@ -9396,7 +9406,7 @@
                             </div>
                             <div class="data-group">
                                 <div class="data-label">Marge de sécurité :</div>
-                                <div class="data-value" style="color: #fbbf24;">10 cm</div>
+                                <div class="data-value" style="color: #fbbf24;">${safetyMargin} cm</div>
                             </div>
                             
                             <h5 style="margin-top: 12px;">📦 Éléments chargés :</h5>
@@ -9453,11 +9463,11 @@
                             <h5>🚢 Conteneur ${data.contName} :</h5>
                             <div class="data-group">
                                 <div class="data-label">Hauteur intérieure :</div>
-                                <div class="data-value">${(data.effectiveH + 10).toFixed(0)} cm</div>
+                                <div class="data-value">${(data.effectiveH + safetyMargin).toFixed(0)} cm</div>
                             </div>
                             <div class="data-group">
                                 <div class="data-label">Marge de sécurité :</div>
-                                <div class="data-value" style="color: #fbbf24;">10 cm</div>
+                                <div class="data-value" style="color: #fbbf24;">${safetyMargin} cm</div>
                             </div>
                             
                             <h5 style="margin-top: 12px;">📦 Éléments chargés :</h5>
@@ -9510,11 +9520,11 @@
                             <h5>🚢 Conteneur ${data.contName} :</h5>
                             <div class="data-group">
                                 <div class="data-label">Hauteur intérieure :</div>
-                                <div class="data-value">${(data.effectiveH + 10).toFixed(0)} cm</div>
+                                <div class="data-value">${(data.effectiveH + safetyMargin).toFixed(0)} cm</div>
                             </div>
                             <div class="data-group">
                                 <div class="data-label">Marge de sécurité :</div>
-                                <div class="data-value" style="color: #fbbf24;">10 cm</div>
+                                <div class="data-value" style="color: #fbbf24;">${safetyMargin} cm</div>
                             </div>
                             
                             <h5 style="margin-top: 12px;">📦 Éléments chargés :</h5>
@@ -9568,11 +9578,11 @@
                             <h5>🚢 Conteneur :</h5>
                             <div class="data-group">
                                 <div class="data-label">Hauteur intérieure :</div>
-                                <div class="data-value">${(data.effectiveH + 10).toFixed(0)} cm</div>
+                                <div class="data-value">${(data.effectiveH + safetyMargin).toFixed(0)} cm</div>
                             </div>
                             <div class="data-group">
                                 <div class="data-label">Marge de sécurité :</div>
-                                <div class="data-value" style="color: #fbbf24;">10 cm</div>
+                                <div class="data-value" style="color: #fbbf24;">${safetyMargin} cm</div>
                             </div>
                             
                             <h5 style="margin-top: 12px;">📦 Éléments chargés :</h5>
@@ -10035,6 +10045,7 @@
         function checkGerbageHeightAnswer(loadedPalH, effectiveH, requestedHeight) {
             const input = document.getElementById('studentMaxHauteurGerbage');
             const feedback = document.getElementById('gerbageHeightFeedback');
+            const safetyMargin = parseInt(document.getElementById('contHeightSafetyMargin').value) || 0;
             
             if (!input || !feedback) return;
             
@@ -10067,7 +10078,7 @@
                 // Réponse trop haute (dépasse la hauteur utile)
                 feedback.className = 'answer-feedback incorrect';
                 feedback.innerHTML = `❌ <strong>Trop élevé.</strong> ${studentAnswer} cm dépasse la hauteur utile de ${effectiveH} cm.<br>
-                    <span style="font-size: 0.7rem;">La hauteur max doit être ≤ ${effectiveH} cm (hauteur intérieure - marge 10 cm).</span>`;
+                    <span style="font-size: 0.7rem;">La hauteur max doit être ≤ ${effectiveH} cm (hauteur intérieure - marge ${safetyMargin} cm).</span>`;
             } else if (niveauxAvecReponse < maxNiveaux) {
                 // Réponse acceptable mais pas optimale
                 feedback.className = 'answer-feedback hint';
@@ -10183,7 +10194,7 @@
             const contL = spec.length;
             const contW = spec.width;
             const contH = spec.height;
-            const heightSafetyMargin = 10;
+            const heightSafetyMargin = parseInt(document.getElementById('contHeightSafetyMargin').value) || 0;
             const usableHeight = contH - heightSafetyMargin;
             
             // Toutes les orientations possibles
